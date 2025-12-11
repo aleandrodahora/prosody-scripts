@@ -24,17 +24,18 @@ form File acquisition
  word FileOutSil OutPutSil.txt
  word FileOutEff OutPutEff.txt
  word FileOutTones OutPutTones.txt
+ word FileOutFreq OutPutFreq.txt
  word AudiofileExtension *.wav
  boolean HasTonesTier 1
  boolean HasVVTier 1
  boolean HasVowelTier 1
  boolean HasSilTier 1
  boolean InSemitones 1
- integer TonesTier 1
- integer VVTier 5
+ integer TonesTier 5
+ integer VVTier 4
  integer VowelTier 3
- integer SilTier 4
- integer ChunkTier 2
+ integer SilTier 2
+ integer ChunkTier 1
  integer left_F0Threshold 75
  integer right_F0Threshold 300
  choice Reference: 1
@@ -89,6 +90,11 @@ if hasSilTier
 filedelete 'fileOutSil$'
 fileappend 'fileOutSil$' audiofile type IPI durSIL 'newline$'
 endif
+
+# Cabeçalho do arquivo de frequência
+filedelete 'fileOutFreq$'
+fileappend 'fileOutFreq$' audiofile tier_number tier_name duration_ms 'newline$'
+
 ##
 ## Start of all computations for all pairs of audio/TG files
 for ifile from 1 to numberOfFiles
@@ -108,7 +114,28 @@ arq$ = filename$ + ".TextGrid"
 Read from file... 'arq$'
 begin = Get starting time
 end = Get finishing time
+
+# Contagem de frequência das camadas de X a Y (informe as camadas que deseja listar)
+for tierNum from 3 to 5    
+    select TextGrid 'filename$'
+    nintervals = Get number of intervals... tierNum
+        # Lista todos os intervalos das camadas indicadas
+	for j from 1 to nintervals
+		select TextGrid 'filename$'
+			label'j'$ = Get label of interval... tierNum j
+		if label'j'$ <> "" 
+				tierName$ = label'j'$
+				t_ini = Get starting point... tierNum j
+				t_fim = Get end point... tierNum j
+					dur_ms = round(('t_fim' - 't_ini') * 1000)
+					fileappend 'fileOutFreq$' 'audiofile$' 'tierNum' 'tierName$' 'dur_ms:0' 'newline$' 
+		 endif
+	endfor
+endfor
+begin = Get starting time
+end = Get finishing time
 ###
+
 # Normalized duration computation as in the SG Detector Script (2006)
 ###
 if hasVVTier
